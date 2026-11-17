@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>车辆检测与分型统计系统 · 产品工作台</title>
+<link rel="stylesheet" href="/ui/style.css">
+</head>
+<body>
+<header>
+  <h1>车辆检测<span>·</span>分型统计系统</h1>
+  <div class="spacer"></div>
+<div class="tag">产品 <b>v0.14</b></div>
+  <div class="tag">P6 · 定版</div>
+</header>
+
+<div class="layout">
+  <aside id="col-left">
+    <section class="block">
+      <h2>01 — 视频源</h2>
+      <div id="sourceList"></div>
+      <label class="upload-box" for="uploadInput">+ 上传本地视频
+        <input type="file" id="uploadInput" accept="video/*">
+      </label>
+      <div class="progress-text" id="uploadStatus"></div>
+    </section>
+
+    <section class="block">
+      <h2>02 — 检测参数</h2>
+      <div class="param">
+        <label>参数预设</label>
+        <div style="display:flex;gap:6px;">
+          <select id="presetSelect" style="flex:1;"></select>
+          <button class="mini" id="presetApplyBtn" type="button">套用</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <input type="text" id="presetName" placeholder="新预设名称" style="flex:1;">
+          <button class="mini" id="presetSaveBtn" type="button">保存</button>
+          <button class="mini danger" id="presetDelBtn" type="button">删除</button>
+        </div>
+        <div class="note" id="presetStatus">内置 4 个预设。</div>
+      </div>
+      <div class="param">
+        <label>置信度阈值 <output id="confOut">0.35</output></label>
+        <input type="range" id="conf" min="0.1" max="0.8" step="0.05" value="0.35">
+      </div>
+      <div class="param-grid">
+        <div class="param">
+          <label>横向计数线 <output id="lineOut">0.60</output></label>
+          <input type="range" id="line" min="0.1" max="0.9" step="0.05" value="0.60">
+        </div>
+        <div class="param">
+          <label>纵向计数线 <output id="lineXOut">0.30</output></label>
+          <input type="range" id="lineX" min="0.1" max="0.9" step="0.05" value="0.30">
+        </div>
+      </div>
+      <div class="param">
+        <label>任务名称</label>
+        <input type="text" id="jobName" value="" placeholder="留空自动生成">
+      </div>
+      <label class="check-row"><input type="checkbox" id="classify" checked> 流向分类（四进口 × 左/直/右）</label>
+      <label class="check-row"><input type="checkbox" id="lineXOn" checked> 启用纵向计数线</label>
+      <div class="param-grid">
+        <div class="param">
+          <label>路口中心 X</label>
+          <input type="number" id="centerX" min="0" max="1" step="0.01" value="0.44">
+        </div>
+        <div class="param">
+          <label>路口中心 Y</label>
+          <input type="number" id="centerY" min="0" max="1" step="0.01" value="0.45">
+        </div>
+      </div>
+      <div class="param">
+        <label>输入分辨率</label>
+        <select id="imgsz">
+          <option value="640">640 — 标准速度</option>
+          <option value="1280">1280 — 小目标增强（较慢，耗时约 3–4 倍）</option>
+        </select>
+      </div>
+      <div class="param">
+        <label>单进口模式（机位在停止线后方）</label>
+        <select id="approach">
+          <option value="">全景模式 — 四进口俯拍</option>
+          <option value="east">东进口</option>
+          <option value="south">南进口</option>
+          <option value="west">西进口</option>
+          <option value="north">北进口</option>
+        </select>
+      </div>
+      <button class="run" id="runBtn">开始检测</button>
+      <button class="ghost" id="batchBtn" style="margin-top:8px;">批量运行三个预设</button>
+      <div class="progress"><div id="progressBar"></div></div>
+      <div class="progress-text" id="progressText">未运行</div>
+    </section>
+
+    <section class="block">
+      <h2>03 — 实时流输入</h2>
+      <div class="param">
+        <label>流地址</label>
+        <input type="text" id="streamUrl" placeholder="rtsp://127.0.0.1:8554/live 或 cam:0">
+      </div>
+      <div class="param-grid">
+        <div class="param">
+          <label>录制时长（秒）</label>
+          <input type="number" id="streamDuration" min="5" max="3600" step="5" value="60">
+        </div>
+        <div class="param">
+          <label>任务名称</label>
+          <input type="text" id="streamJobName" value="" placeholder="留空自动生成">
+        </div>
+      </div>
+      <button class="run" id="streamBtn">开始实时检测</button>
+      <div class="progress-text" id="streamStatus"></div>
+      <div class="note">CPU 跟不上流速时会丢帧，计数为该时段内实际处理帧的过线数。</div>
+    </section>
+  </aside>
+
+  <main id="col-center">
+    <div class="tabs">
+      <button class="tab active" data-tab="overview">总览</button>
+      <button class="tab" data-tab="movements">分进口流向</button>
+      <button class="tab" data-tab="planning">规划分析</button>
+      <button class="tab" data-tab="export">导出数据</button>
+    </div>
+
+    <div class="tabpanel active" id="tab-overview">
+      <div id="overviewEmpty" class="empty">未加载任务 — 从左侧选择视频并运行，或在右侧任务记录中打开已有任务</div>
+      <div id="livePanel" style="display:none;">
+        <h3 class="subhead">实时计数 · <span id="liveState" style="color:var(--lime)">运行中</span></h3>
+        <div class="dual-videos">
+          <div class="video-wrap">
+            <!-- R19: the source video plays at its native frame rate
+                 (smooth, looping — the 16s clip outlasts the ~6 min
+                 detection run), no longer a snapshot frame pretending
+                 to be video. Stream jobs have no source file: the
+                 snapshot image below is shown instead. -->
+            <video id="liveRawVideo" autoplay muted loop playsinline></video>
+            <img id="liveRawImg" alt="实时原视频" style="display:none;">
+            <div class="video-cap"><span>原视频 · 原生帧率</span><span id="liveRawCap"></span></div>
+          </div>
+          <div class="video-wrap">
+            <img id="liveAnnImg" alt="实时计数视频">
+            <div class="video-cap"><span>计数视频 · 引擎帧</span><span id="liveAnnCap"></span></div>
+          </div>
+        </div>
+      </div>
+      <div id="overviewBody" style="display:none;">
+        <div class="dual-videos">
+          <div class="video-wrap" id="origWrap">
+            <video id="originalVideo" controls preload="metadata"></video>
+            <div class="video-cap"><span id="origCapLeft">原视频</span><span id="origCapRight"></span></div>
+          </div>
+          <div class="video-wrap">
+            <video id="annotatedVideo" controls preload="metadata"></video>
+            <div class="video-cap"><span id="videoCapLeft">标注视频</span><span id="videoCapRight"></span></div>
+          </div>
+        </div>
+        <h3 class="subhead">分断面计数</h3>
+        <div id="byLineTables"></div>
+        <div class="note">计数口径：进口流量以定向过线计数为准；流向分类只给结构比例。公开演示视频数据仅供流程验证，不得作为实测数据写入论文或报告。</div>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="tab-movements">
+      <div id="movEmpty" class="empty">暂无流向数据 — 需在检测参数中开启流向分类后运行</div>
+      <div id="movBody" style="display:none;">
+        <h3 class="subhead">路口流向图</h3>
+        <div id="movDiagram"></div>
+        <h3 class="subhead">分进口流向结构</h3>
+        <div id="movCards"></div>
+        <h3 class="subhead">四进口 × 流向 × 车型</h3>
+        <div id="movTables"></div>
+        <div class="note">方法：轨迹起终点相对路口中心的方位查表定流向；停车与过短轨迹已过滤。16 秒演示片段数值仅为结构比例示意。</div>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="tab-planning">
+      <div id="planEmpty" class="empty">暂无调查数据 — 需先运行带流向分类的检测任务，或在右侧合并单进口调查后运行规划分析</div>
+      <div id="planBody" style="display:none;">
+        <div class="note red">演示数据声明：流量为视频片段内的原始计数，未折算为小时流量；车道数、饱和流量、信号配时为下方手工填入的演示参数，仅演示分析流程。</div>
+        <h3 class="subhead">路口几何与信号参数</h3>
+        <div class="param-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px;">
+          <div class="param"><label>路口名称</label><input type="text" id="planName" value="演示路口"></div>
+          <div class="param"><label>现行周期（秒）</label><input type="number" id="planCycle" value="90" min="30" max="240"></div>
+          <div class="param"><label>相位 1 绿灯（秒）</label><input type="number" id="planGreen1" value="40" min="5" max="120"></div>
+          <div class="param"><label>相位 2 绿灯（秒）</label><input type="number" id="planGreen2" value="40" min="5" max="120"></div>
+        </div>
+        <div class="param-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:12px;">
+          <div class="param"><label>每流向车道数</label><input type="number" id="planLanes" value="1" min="1" max="4"></div>
+          <div class="param"><label>单车道饱和流量（辆/小时）</label><input type="number" id="planSat" value="1650" min="800" max="2200" step="50"></div>
+        </div>
+        <button class="ghost" id="planRunBtn">运行规划分析</button>
+        <div id="planResult" style="margin-top:18px;"></div>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="tab-export">
+      <div id="expEmpty" class="empty">未加载任务 — 先运行或打开一个任务</div>
+      <div id="expBody" style="display:none;">
+        <h3 class="subhead">调查报告</h3>
+        <div class="btn-row">
+          <button id="expXlsxBtn" class="run">导出 Excel 报告</button>
+          <button id="expPdfBtn" class="ghost">导出 PDF 报告</button>
+          <span id="expStatus" class="fmeta"></span>
+        </div>
+        <div class="note">报告含概览 / 过线记录 / 流向统计 / 规划分析 / 数据说明五部分；规划未跑过时按默认参数补算并注明。</div>
+        <h3 class="subhead">结果文件</h3>
+        <div id="fileList"></div>
+      </div>
+    </div>
+  </main>
+
+  <aside id="col-right">
+    <section class="block">
+      <h2>计数</h2>
+      <div id="kpiEmpty" class="progress-text">未运行 — 开始检测后数字实时跳动</div>
+      <div id="kpiLiveWrap" style="display:none;"><div class="kpis" id="liveKpis"></div></div>
+      <div id="kpiResultWrap" style="display:none;"><div class="kpis" id="kpis"></div></div>
+    </section>
+
+    <section class="block">
+      <h2>流量曲线</h2>
+      <div id="flowEmpty" class="progress-text">每 60 秒一格</div>
+      <div id="liveFlowWrap" style="display:none;">
+        <div class="bars" id="liveFlowBars"></div>
+        <div class="bars-label"><span id="liveFlowLabelLeft"></span><span id="liveFlowLabelRight"></span></div>
+      </div>
+      <div id="flowWrap" style="display:none;">
+        <div class="bars" id="flowBars"></div>
+        <div class="bars-label"><span id="flowLabelLeft"></span><span id="flowLabelRight"></span></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>04 — 任务记录</h2>
+      <div id="jobList" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </section>
+
+    <section class="block">
+      <h2>05 — 单进口合并</h2>
+      <div id="mergeList" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button class="ghost" id="mergeBtn" style="margin-top:8px;">合并所选进口</button>
+      <div class="progress-text" id="mergeStatus"></div>
+      <div id="mergeResult"></div>
+      <div class="note">合并按 ×60/录制分钟折算小时流率；几何参数为演示值，正式报告须按实地核对。</div>
+    </section>
+  </aside>
+</div>
+
+<footer>
+  <span>引擎：ONNX + NumPy 追踪 · 模型 YOLOv8s-VisDrone</span>
+  <span>演示数据不得冒充实测</span>
+</footer>
+<script src="/ui/app.js"></script>
+</body>
+</html>

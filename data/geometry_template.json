@@ -1,0 +1,155 @@
+{
+  "approaches": [
+    {
+      "counts_15min_peak": [
+        410,
+        455,
+        470,
+        425
+      ],
+      "movements": {
+        "left": {
+          "dedicated_lane": true,
+          "flow_by_type": {},
+          "lanes": 1,
+          "phase": 1,
+          "sat_flow_per_lane": 1600
+        },
+        "right": {
+          "dedicated_lane": false,
+          "flow_by_type": {},
+          "lanes": 1,
+          "phase": 0,
+          "sat_flow_per_lane": 1500
+        },
+        "through": {
+          "dedicated_lane": true,
+          "flow_by_type": {},
+          "lanes": 2,
+          "phase": 0,
+          "sat_flow_per_lane": 1700
+        }
+      },
+      "name": "东进口"
+    },
+    {
+      "counts_15min_peak": [
+        360,
+        395,
+        405,
+        370
+      ],
+      "movements": {
+        "left": {
+          "dedicated_lane": true,
+          "flow_by_type": {},
+          "lanes": 1,
+          "phase": 1,
+          "sat_flow_per_lane": 1600
+        },
+        "right": {
+          "dedicated_lane": false,
+          "flow_by_type": {},
+          "lanes": 1,
+          "phase": 0,
+          "sat_flow_per_lane": 1500
+        },
+        "through": {
+          "dedicated_lane": true,
+          "flow_by_type": {},
+          "lanes": 2,
+          "phase": 0,
+          "sat_flow_per_lane": 1700
+        }
+      },
+      "name": "西进口"
+    },
+    {
+      "counts_15min_peak": [
+        330,
+        372,
+        388,
+        350
+      ],
+      "movements": {
+        "left": {
+          "dedicated_lane": true,
+          "flow_by_type": {},
+          "lanes": 1,
+          "phase": 3,
+          "sat_flow_per_lane": 1600
+        },
+        "right": {
+          "dedicated_lane": false,
+          "flow_by_type": {},
+          "lanes": 1,
+          "phase": 2,
+          "sat_flow_per_lane": 1500
+        },
+        "through": {
+          "dedicated_lane": true,
+          "flow_by_type": {},
+          "lanes": 2,
+          "phase": 2,
+          "sat_flow_per_lane": 1700
+        }
+      },
+      "name": "南进口"
+    },
+    {
+      "counts_15min_peak": [
+        315,
+        350,
+        366,
+        334
+      ],
+      "movements": {
+        "left": {
+          "dedicated_lane": true,
+          "flow_by_type": {},
+          "lanes": 1,
+          "phase": 3,
+          "sat_flow_per_lane": 1600
+        },
+        "right": {
+          "dedicated_lane": false,
+          "flow_by_type": {},
+          "lanes": 1,
+          "phase": 2,
+          "sat_flow_per_lane": 1500
+        },
+        "through": {
+          "dedicated_lane": true,
+          "flow_by_type": {},
+          "lanes": 2,
+          "phase": 2,
+          "sat_flow_per_lane": 1700
+        }
+      },
+      "name": "北进口"
+    }
+  ],
+  "cycle_current": 110,
+  "data_note": "几何模板：车道数/饱和流量/相位/周期沿用示例值占位，必须按实地渠化与信号调查改成本路口的真实参数；流量由 merge_surveys.py 从各进口片段写入，本文件里的 flow_by_type 不被使用。",
+  "intersection": "（模板：改成实际路口名）",
+  "lost_time_per_phase": 3.0,
+  "period": "晚高峰 17:30-18:30",
+  "phases": [
+    {
+      "current_green": 36,
+      "name": "东西直行相位"
+    },
+    {
+      "current_green": 16,
+      "name": "东西左转相位"
+    },
+    {
+      "current_green": 32,
+      "name": "南北直行相位"
+    },
+    {
+      "current_green": 14,
+      "name": "南北左转相位"
+    }
+  ]
+}

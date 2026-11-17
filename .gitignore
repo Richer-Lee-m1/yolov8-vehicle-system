@@ -1,0 +1,29 @@
+# 构建与运行产物
+build/
+dist/
+*.spec.bak
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 运行输出（任务结果、标注视频、报告）
+outputs/
+
+# 打包用的 ffmpeg 等本地二进制
+tools/
+
+# 日志与临时文件
+*.log
+*.tmp
+*.bak
+*.zip
+
+# 编辑器与系统文件
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
